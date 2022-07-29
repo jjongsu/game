@@ -24,16 +24,20 @@ export default class MainScene extends Phaser.Scene {
         this.background = this.add.tileSprite(width / 2, height / 2, width * 2, height * 2, 'space');
 
         this.player = this.add.circle(width / 2, height / 2, 30, 0xff0000);
-        this.enemy = new Enemy({ scene: this, x: width / 2, y: 50, target: { x: this.player.x, y: this.player.y } });
+        this.physics.add.existing(this.player);
+        // this.enemy = new Enemy({ scene: this, x: width / 2, y: 50, target: { x: this.player.x, y: this.player.y } });
         const enemyGroup = this.add.group({ defaultKey: 'test', defaultFrame: 1 });
 
-        console.log(enemyGroup);
-
-        this.enemy.create();
+        // this.enemy.create();
         this.time.addEvent({
-            delay: 100,
+            delay: 1000,
             callback: () => {
-                const enemy = new Enemy({ scene: this, x: width / 2, y: 50, target: { x: this.player.x, y: this.player.y } });
+                const enemy = new Enemy({
+                    scene: this,
+                    x: Phaser.Math.Between(this.player.x - width / 2, this.player.x + width / 2),
+                    y: -height / 2,
+                    target: { x: this.player.x, y: this.player.y }
+                });
 
                 // const aa = this.add.circle(width / 2, 100, 10, 0xffffff);
                 // enemyGroup.add(aa);
@@ -48,7 +52,7 @@ export default class MainScene extends Phaser.Scene {
         this.cursors = this.input.keyboard.createCursorKeys();
 
         this.cameras.main.startFollow(this.player);
-        this.cameras.main.setBounds(-width / 2, -height / 2, width * 2, height * 1.5);
+        this.cameras.main.setBounds(-width / 2, -height / 2, width * 1.2, height);
     }
 
     update(time: number, delta: number): void {
@@ -62,17 +66,20 @@ export default class MainScene extends Phaser.Scene {
             }
         });
 
-        if (this.cursors.left.isDown && this.player.x > -this.totalWidth / 2) {
-            this.player.x -= 10;
+        if (this.cursors.left.isDown && this.player.x > -this.totalWidth * 0.4) {
+            this.player.body.velocity.x = -200;
+        } else if (this.cursors.right.isDown && this.player.x < this.totalWidth * 0.6) {
+            this.player.body.velocity.x = 200;
+        } else {
+            this.player.body.velocity.x = 0;
         }
-        if (this.cursors.right.isDown && this.player.x < this.totalWidth * 1.5) {
-            this.player.x += 10;
-        }
-        if (this.cursors.up.isDown && this.player.y > -this.totalHeight / 2) {
-            this.player.y -= 10;
-        }
-        if (this.cursors.down.isDown && this.player.y < this.totalHeight) {
-            this.player.y += 10;
+
+        if (this.cursors.up.isDown && this.player.y > -this.totalHeight * 0.5) {
+            this.player.body.velocity.y = -200;
+        } else if (this.cursors.down.isDown && this.player.y < this.totalHeight * 0.5) {
+            this.player.body.velocity.y = 200;
+        } else {
+            this.player.body.velocity.y = 0;
         }
     }
 }
