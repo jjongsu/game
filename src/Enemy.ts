@@ -12,11 +12,11 @@ export default class Enemy {
         const angle = Math.atan2(y - target.y, x - target.x);
         // const speed = Math.random() * 3 + 5;
         const speed = 3;
-        // this.dx = Math.cos(angle) * speed;
-        // this.dy = Math.sin(angle) * speed;
+        this.dx = Math.cos(angle) * speed;
+        this.dy = Math.sin(angle) * speed;
 
-        this.dx = 0 * speed;
-        this.dy = -1 * speed;
+        // this.dx = 0 * speed;
+        // this.dy = -1 * speed;
 
         this.scene = scene;
         this.x = x;
@@ -42,8 +42,8 @@ export default class Enemy {
         this.enemy.x -= this.dx;
         this.enemy.y -= this.dy;
 
-        // if (this.projectile1) this.projectile1.y -= this.dy - 2;
-        // if (this.projectile2) this.projectile2.y -= this.dy - 2;
-        // if (this.projectile3) this.projectile3.y -= this.dy - 2;
+        // if (this.projectile1 && this.projectile1.y < 750) this.projectile1.y -= this.dy - 2;
+        // if (this.projectile2 && this.projectile2.y < 750) this.projectile2.y -= this.dy - 2;
+        // if (this.projectile3 && this.projectile3.y < 750) this.projectile3.y -= this.dy - 2;
     }
 }

@@ -1,104 +1,95 @@
-import Enemy from '../Enemy';
+import Player from '../Player';
 
 export default class MainScene extends Phaser.Scene {
     cursors!: Phaser.Types.Input.Keyboard.CursorKeys;
     background!: Phaser.GameObjects.TileSprite;
-    player!: Phaser.GameObjects.Arc;
-    enemy!: Enemy;
-    enemies: Enemy[] = [];
-    totalWidth: number = 0;
-    totalHeight: number = 0;
+    Player!: Player;
+    rushEnemies!: Phaser.Physics.Arcade.Group;
+    gameOver!: boolean;
+    life: number = 100;
+
     constructor() {
         super({ key: 'main' });
     }
 
     preload() {
-        this.load.image('space', 'space.jpeg');
-        this.load.image('star', 'star.png');
+        const images = 'assets/images';
+        this.load.image('space', `${images}/space.jpeg`);
+        this.load.atlas('airplane', `${images}/airplane.png`, `${images}/airplane.json`);
     }
 
     create() {
         const { width, height } = this.game.canvas;
-        this.totalWidth = width;
-        this.totalHeight = height;
+        this.physics.world.setBounds(-width / 2, -height / 2, width * 2, height * 2);
 
-        this.background = this.add.tileSprite(width / 2, height / 2, width * 2, height * 2, 'space');
+        // BACKGROUND
+        this.background = this.add.tileSprite(-width / 2, -height / 2, width * 2, height * 2, 'space').setOrigin(0, 0);
 
-        this.player = this.add.circle(width / 2, height / 2, 30, 0xff0000);
-        this.physics.add.existing(this.player);
-        // this.enemy = new Enemy({ scene: this, x: width / 2, y: 50, target: { x: this.player.x, y: this.player.y } });
-        const enemyGroup = this.add.group({ defaultKey: 'test', defaultFrame: 1 });
+        // GAME INFO
+        const life = this.add.text(16, 16, `Life: ${this.life}`, { fontSize: '16px', color: '#ffffff' }).setScrollFactor(0);
 
-        // this.enemy.create();
-        this.time.addEvent({
+        // PLAYER
+        this.Player = new Player({ scene: this });
+        this.Player.create();
+
+        // ENEMY - RUSH TYPE
+        this.rushEnemies = this.physics.add.group();
+        const timer = this.time.addEvent({
             delay: 1000,
             callback: () => {
-                const enemy = new Enemy({
-                    scene: this,
-                    x: Phaser.Math.Between(this.player.x - width / 2, this.player.x + width / 2),
-                    y: -height / 2,
-                    target: { x: this.player.x, y: this.player.y }
+                const enemy = this.add.circle(Phaser.Math.Between(0, width), -height / 2, 30, 0xff0000);
+                this.rushEnemies.add(enemy);
+                const angle = Math.atan2(enemy.y - this.Player.player.y, enemy.x - this.Player.player.x);
+                const speed = Phaser.Math.Between(500, 1000);
+                enemy.body.velocity.x = -Math.cos(angle) * speed;
+                enemy.body.velocity.y = -Math.sin(angle) * speed;
+
+                this.rushEnemies.children.iterate((el) => {
+                    if (el.body.position.y > 2 * height)
+                        setTimeout(() => {
+                            this.rushEnemies.remove(el);
+                            el.destroy();
+                        });
                 });
-
-                // const aa = this.add.circle(width / 2, 100, 10, 0xffffff);
-                // enemyGroup.add(aa);
-                enemy.create();
-                this.enemies.push(enemy);
-
-                // console.log(enemyGroup.getChildren());
             },
             loop: true
         });
 
-        const group = this.physics.add.staticGroup({
-            key: 'star',
-            frameQuantity: 30
-        });
-
-        this.physics.add.overlap(this.player, group);
+        // HANDLER
+        this.physics.add.collider(
+            this.Player.player,
+            this.rushEnemies,
+            async (player, enemy) => {
+                this.cameras.main.flash(1000, undefined, undefined, undefined, true);
+                this.life -= 1;
+                life.setText(`Life: ${this.life}`);
+                enemy.destroy();
+                this.rushEnemies.remove(enemy);
+                if (this.life === 0) {
+                    this.physics.pause();
+                    timer.destroy();
+                    this.gameOver = true;
+                    await new Promise((resolve) => setTimeout(resolve, 1500));
+                    this.cameras.main.fade(2000);
+                }
+            },
+            undefined,
+            this
+        );
 
         this.cursors = this.input.keyboard.createCursorKeys();
 
-        this.cameras.main.startFollow(this.player);
-        this.cameras.main.setBounds(-width / 2, -height / 2, width * 1.2, height);
-
-        const text = this.add.text(10, 10, 'Colliders: 5', { font: '16px Courier', fill: '#00ff00' });
-        let i = 5;
-        text.setText('Colliders: ' + i);
+        this.cameras.main.startFollow(this.Player.player);
+        this.cameras.main.setBounds(-width / 2, -height / 2, width * 2, height * 2);
     }
 
     update(time: number, delta: number): void {
+        if (this.gameOver) return;
+
+        // BACKGROUND
         this.background.tilePositionY -= 3;
-        this.enemies.forEach((el, i) => {
-            el.update();
 
-            if (el.enemy.y < -this.totalHeight || el.enemy.y > this.totalHeight * 1.5) {
-                el.enemy.destroy();
-                setTimeout(() => this.enemies.splice(i, 1));
-            }
-        });
-
-        if (this.cursors.left.isDown && this.player.x > -this.totalWidth * 0.4) {
-            this.player.body.velocity.x = -200;
-        } else if (this.cursors.right.isDown && this.player.x < this.totalWidth * 0.6) {
-            this.player.body.velocity.x = 200;
-        } else {
-            this.player.body.velocity.x = 0;
-        }
-
-        if (this.cursors.up.isDown && this.player.y > -this.totalHeight * 0.5) {
-            this.player.body.velocity.y = -200;
-        } else if (this.cursors.down.isDown && this.player.y < this.totalHeight * 0.5) {
-            this.player.body.velocity.y = 200;
-        } else {
-            this.player.body.velocity.y = 0;
-        }
-
-        if (this.player.body.touching.none) {
-            this.player.body.debugBodyColor = 0x0099ff;
-        } else {
-            this.player.body.debugBodyColor = 0x99ff00;
-            // this.player.destroy();
-        }
+        // PLAYER
+        this.Player.update({ cursors: this.cursors });
     }
 }
