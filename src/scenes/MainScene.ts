@@ -14,6 +14,7 @@ export default class MainScene extends Phaser.Scene {
 
     preload() {
         this.load.image('space', 'space.jpeg');
+        this.load.image('star', 'star.png');
     }
 
     create() {
@@ -49,10 +50,21 @@ export default class MainScene extends Phaser.Scene {
             loop: true
         });
 
+        const group = this.physics.add.staticGroup({
+            key: 'star',
+            frameQuantity: 30
+        });
+
+        this.physics.add.overlap(this.player, group);
+
         this.cursors = this.input.keyboard.createCursorKeys();
 
         this.cameras.main.startFollow(this.player);
         this.cameras.main.setBounds(-width / 2, -height / 2, width * 1.2, height);
+
+        const text = this.add.text(10, 10, 'Colliders: 5', { font: '16px Courier', fill: '#00ff00' });
+        let i = 5;
+        text.setText('Colliders: ' + i);
     }
 
     update(time: number, delta: number): void {
@@ -80,6 +92,13 @@ export default class MainScene extends Phaser.Scene {
             this.player.body.velocity.y = 200;
         } else {
             this.player.body.velocity.y = 0;
+        }
+
+        if (this.player.body.touching.none) {
+            this.player.body.debugBodyColor = 0x0099ff;
+        } else {
+            this.player.body.debugBodyColor = 0x99ff00;
+            // this.player.destroy();
         }
     }
 }
