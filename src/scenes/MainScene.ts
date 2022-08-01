@@ -21,6 +21,7 @@ export default class MainScene extends Phaser.Scene {
 
     create() {
         const { width, height } = this.game.canvas;
+        this.physics.world.setBounds(-width / 2, -height / 2, width * 2, height * 2);
 
         // BACKGROUND
         this.background = this.add.tileSprite(-width / 2, -height / 2, width * 2, height * 2, 'space').setOrigin(0, 0);
