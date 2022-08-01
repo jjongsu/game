@@ -22,7 +22,7 @@ new Phaser.Game({
         }
     },
     scene: [MainScene]
-    // scene: {
+    // scene: { 
     //     preload() {
     //         this.load.image('sky', 'sky.png');
     //         this.load.image('ground', 'platform.png');
