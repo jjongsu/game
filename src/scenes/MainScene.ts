@@ -1,5 +1,6 @@
 import Player from '../Player';
 import Rush from '../Enemy/Rush';
+import Attack from '../Enemy/Attack';
 
 export default class MainScene extends Phaser.Scene {
     cursors!: Phaser.Types.Input.Keyboard.CursorKeys;
@@ -11,6 +12,7 @@ export default class MainScene extends Phaser.Scene {
     number: number = 0;
     score!: Phaser.GameObjects.Text;
     starcount!: Phaser.GameObjects.Group;
+    Attack!: Attack;
 
     constructor() {
         super({ key: 'main' });
@@ -18,9 +20,16 @@ export default class MainScene extends Phaser.Scene {
 
     preload() {
         const images = 'assets/images';
+        const ships = 'ships/ship_';
         this.load.image('space', `${images}/space.jpeg`);
         this.load.atlas('airplane', `${images}/airplane.png`, `${images}/airplane.json`);
         this.load.image('star', `./star.png`);
+        this.load.image('bomb', './bomb.png');
+        this.load.image('ship0', `${ships}0000.png`);
+        this.load.image('ship1', `${ships}0001.png`);
+        this.load.image('ship2', `${ships}0002.png`);
+        this.load.image('ship3', `${ships}0003.png`);
+        this.load.image('missile', './ships/spaceMissiles_024.png');
     }
 
     create() {
@@ -50,16 +59,29 @@ export default class MainScene extends Phaser.Scene {
 
         // ENEMY - RUSH TYPE
         this.Rush = new Rush({ scene: this });
+        // const timer = this.time.addEvent({
+        //     delay: 300,
+        //     callback: () => {
+        //         const { x, y } = this.Player.player;
+        //         this.Rush.create({ target: { x, y } });
+        //     },
+        //     loop: true
+        // });
+
+        // ENERMY - ATTACK TYPE
+        this.Attack = new Attack({ scene: this });
+
         const timer = this.time.addEvent({
-            delay: 300,
+            delay: 500,
             callback: () => {
                 const { x, y } = this.Player.player;
-                this.Rush.create({ target: { x, y } });
+                // this.Rush.create({ target: { x, y } });
+                this.Attack.create({ target: { x, y } });
             },
             loop: true
         });
 
-        // COLLIDER PLAYER - ENEMY
+        // COLLIDER PLAYER - RUSH
         this.physics.add.collider(this.Player.player, this.Rush.enemies, async (player, enemy) => {
             this.cameras.main.flash(1000, undefined, undefined, undefined, true);
             this.Player.life -= 1;
@@ -77,14 +99,41 @@ export default class MainScene extends Phaser.Scene {
             }
         });
 
-        // COLLIDER PLAYER(PROJECTILE) - ENEMY
+        // COLLIDER PLAYER - ATTACK
+        // COLLIDER PLAYER - ENEMY
+        this.physics.add.collider(this.Player.player, this.Attack.enemies, async (player, enemy) => {
+            this.cameras.main.flash(1000, undefined, undefined, undefined, true);
+            this.Player.life -= 1;
+            this.starcount.getChildren()[this.Player.life].destroy();
+            enemy.destroy();
+            this.Attack.enemies.remove(enemy);
+            if (this.Player.life === 0) {
+                this.physics.pause();
+                timer.destroy();
+                this.gameOver = true;
+                await new Promise((resolve) => setTimeout(resolve, 1500));
+                this.cameras.main.fade(2000);
+                this.scene.stop();
+                this.scene.start('end');
+            }
+        });
+
+        // COLLIDER PLAYER(PROJECTILE) - RUSH
         this.physics.add.collider(this.Player.Projectile.projectiles, this.Rush.enemies, (projectile, enemy) => {
             enemy.destroy();
             this.Rush.enemies.remove(enemy);
             projectile.destroy();
             this.Player.Projectile.projectiles.remove(projectile);
             this.number += 100;
-            this.score.setText(`Score: ${this.number}`);
+        });
+
+        // COLLIDER PLAYER(PROJECTILE) - ATTACK
+        this.physics.add.collider(this.Player.Projectile.projectiles, this.Attack.enemies, (projectile, enemy) => {
+            enemy.destroy();
+            this.Attack.enemies.remove(enemy);
+            projectile.destroy();
+            this.Player.Projectile.projectiles.remove(projectile);
+            this.number += 100;
         });
 
         this.cursors = this.input.keyboard.createCursorKeys();
@@ -93,6 +142,7 @@ export default class MainScene extends Phaser.Scene {
     }
 
     update(time: number, delta: number): void {
+        if (Math.floor(this.number / 1000) >= this.Player.Projectile.level) this.Player.Projectile.upgrade();
         if (this.gameOver) return;
         // BACKGROUND
         this.background.tilePositionY -= 3;

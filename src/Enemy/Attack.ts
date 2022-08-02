@@ -1,4 +1,4 @@
-export default class Rush {
+export default class Attack {
     enemies!: Phaser.Physics.Arcade.Group;
     scene!: Phaser.Scene;
     timer!: Phaser.Time.TimerEvent;
@@ -14,26 +14,14 @@ export default class Rush {
     }
 
     create({ target }: { target: { x: number; y: number } }) {
-        const enemy = this.scene.physics.add.image(Phaser.Math.Between(0, this.width), -this.height / 2, 'ship0').setScale(2);
+        const enemy = this.scene.physics.add.image(target.x + Phaser.Math.Between(-100, 100), -this.height / 2, 'ship2').setScale(2);
         this.enemies.add(enemy);
-        const angle = Math.atan2(enemy.y - target.y, enemy.x - target.x);
-        const speed = Phaser.Math.Between(500, 1000);
+        const speed = 300;
 
-        enemy.setRotation(angle - Math.PI / 2);
-        enemy.body.velocity.x = -Math.cos(angle) * speed;
-        enemy.body.velocity.y = -Math.sin(angle) * speed;
+        enemy.body.velocity.y = speed;
     }
     update() {
         this.enemies.children.iterate((child) => {
-            // @ts-ignore
-
-            // if (child.body.touching.down) {
-            //     setTimeout(() => {
-            //         this.enemies.remove(child);
-            //         child.destroy();
-            //     });
-            // }
-
             if (child.body.position.y > this.height * 2) {
                 setTimeout(() => {
                     this.enemies.remove(child);

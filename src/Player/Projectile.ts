@@ -8,6 +8,7 @@ export default class Projectile {
     height!: number;
     level: number = 1;
     speed: number = 1000;
+
     constructor({ scene }: { scene: Phaser.Scene }) {
         const { width, height } = scene.game.canvas;
         this.scene = scene;
@@ -19,12 +20,21 @@ export default class Projectile {
     create({ player }: { player: Player }) {
         this.Player = player;
         const { x, y } = player.player;
-        const projectile = this.scene.add.circle(x, y - 30, 30, 0x4432a8);
-        this.projectiles.add(projectile);
-        projectile.body.velocity.y = -this.speed;
+        // const projectile = this.scene.add.circle(x, y - 30, 30, 0x4432a8);
+
+        for (let index = 0; index < this.level; index++) {
+            const offset = -80 + (160 * (index + 1)) / (this.level + 1);
+            const projectile = this.scene.physics.add.image(x + offset, y - 30, 'missile');
+            this.projectiles.add(projectile);
+
+            projectile.body.velocity.x = offset * 3;
+            projectile.body.velocity.y = -this.speed;
+        }
     }
 
-    upgrade() {}
+    upgrade() {
+        this.level++;
+    }
     update() {
         this.projectiles.children.iterate((child) => {
             if (child.body.position.y < -this.height / 2) {

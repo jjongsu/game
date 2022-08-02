@@ -25,7 +25,7 @@ export default class Player {
         this.Projectile.create({ player: this });
 
         const timer = this.scene.time.addEvent({
-            delay: 150,
+            delay: 1000,
             callback: () => {
                 this.Projectile.create({ player: this });
                 this.life === 0 && timer.destroy();
