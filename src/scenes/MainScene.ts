@@ -8,6 +8,9 @@ export default class MainScene extends Phaser.Scene {
     Rush!: Rush;
     rushEnemies!: Phaser.Physics.Arcade.Group;
     gameOver!: boolean;
+    number: number = 0;
+    score!: Phaser.GameObjects.Text;
+    starcount!: Phaser.GameObjects.Group;
 
     constructor() {
         super({ key: 'main' });
@@ -17,11 +20,11 @@ export default class MainScene extends Phaser.Scene {
         const images = 'assets/images';
         this.load.image('space', `${images}/space.jpeg`);
         this.load.atlas('airplane', `${images}/airplane.png`, `${images}/airplane.json`);
+        this.load.image('star', `./star.png`);
     }
 
     create() {
         const { width, height } = this.game.canvas;
-        this.physics.world.setBounds(-width / 2, -height / 2, width * 2, height * 2);
 
         // BACKGROUND
         this.background = this.add.tileSprite(-width / 2, -height / 2, width * 2, height * 2, 'space').setOrigin(0, 0);
@@ -32,7 +35,18 @@ export default class MainScene extends Phaser.Scene {
         this.Player.create();
 
         // GAME INFO
-        const life = this.add.text(16, 16, `Life: ${this.Player.life}`, { fontSize: '16px', color: '#ffffff' }).setScrollFactor(0);
+        this.add.text(16, 16, `Life:`, { fontSize: '16px', color: '#ffffff' }).setScrollFactor(0);
+        this.starcount = this.add.group({ classType: Image });
+        for (let i = 0; i < this.Player.life; i++) {
+            this.starcount.add(
+                this.add
+                    .image(16 * (i + 5), 23, 'star')
+                    .setScale(0.7)
+                    .setScrollFactor(0),
+                true
+            );
+        }
+        this.score = this.add.text(16, 35, `Score: ${this.number}`, { fontSize: '16px', color: '#ffffff' }).setScrollFactor(0);
 
         // ENEMY - RUSH TYPE
         this.Rush = new Rush({ scene: this });
@@ -49,7 +63,7 @@ export default class MainScene extends Phaser.Scene {
         this.physics.add.collider(this.Player.player, this.Rush.enemies, async (player, enemy) => {
             this.cameras.main.flash(1000, undefined, undefined, undefined, true);
             this.Player.life -= 1;
-            life.setText(`Life: ${this.Player.life}`);
+            this.starcount.getChildren()[this.Player.life].destroy();
             enemy.destroy();
             this.Rush.enemies.remove(enemy);
             if (this.Player.life === 0) {
@@ -58,6 +72,8 @@ export default class MainScene extends Phaser.Scene {
                 this.gameOver = true;
                 await new Promise((resolve) => setTimeout(resolve, 1500));
                 this.cameras.main.fade(2000);
+                this.scene.stop();
+                this.scene.start('end');
             }
         });
 
@@ -67,6 +83,8 @@ export default class MainScene extends Phaser.Scene {
             this.Rush.enemies.remove(enemy);
             projectile.destroy();
             this.Player.Projectile.projectiles.remove(projectile);
+            this.number += 100;
+            this.score.setText(`Score: ${this.number}`);
         });
 
         this.cursors = this.input.keyboard.createCursorKeys();
@@ -79,12 +97,16 @@ export default class MainScene extends Phaser.Scene {
         // BACKGROUND
         this.background.tilePositionY -= 3;
 
+        // SCORE
+        this.number += 1;
+        this.score.setText(`Score: ${this.number}`);
+
         // PLAYER
         this.Player.update({ cursors: this.cursors });
 
         // PLAYER(PROJECTILE)
         this.Player.Projectile.update();
-        
+
         // ENEMY - RUSH
         this.Rush.update();
     }

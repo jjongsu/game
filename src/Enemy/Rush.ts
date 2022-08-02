@@ -14,6 +14,7 @@ export default class Rush {
     }
     create({ target }: { target: { x: number; y: number } }) {
         const enemy = this.scene.add.circle(Phaser.Math.Between(0, this.width), -this.height / 2, 30, 0xff0000);
+        this.scene.physics.add.existing(enemy);
         this.enemies.add(enemy);
         const angle = Math.atan2(enemy.y - target.y, enemy.x - target.x);
         const speed = Phaser.Math.Between(500, 1000);
@@ -22,6 +23,15 @@ export default class Rush {
     }
     update() {
         this.enemies.children.iterate((child) => {
+            // @ts-ignore
+
+            // if (child.body.touching.down) {
+            //     setTimeout(() => {
+            //         this.enemies.remove(child);
+            //         child.destroy();
+            //     });
+            // }
+
             if (child.body.position.y > this.height * 2) {
                 setTimeout(() => {
                     this.enemies.remove(child);
