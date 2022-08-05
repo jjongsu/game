@@ -1,20 +1,12 @@
-import MainScene from './MainScene';
-
 export default class EndScene extends Phaser.Scene {
     constructor() {
         super({ key: 'end' });
     }
 
     create() {
-        const life = this.add.text(16, 16, `Game Over`, { fontSize: '16px', color: '#ffffff' }).setScrollFactor(0);
+        const { width, height } = this.game.canvas;
+        const text = this.add.text(width / 2, height / 2, `GAME OVER`, { fontSize: '50px', color: '#ffffff' }).setOrigin(0.5, 0.5);
 
-        this.input.once(
-            'pointerdown',
-            () => {
-                // 다른 씬?
-                this.scene.start('main');
-            },
-            this
-        );
+        this.input.once('pointerup', () => this.scene.start('main'), text);
     }
 }

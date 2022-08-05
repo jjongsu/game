@@ -17,12 +17,24 @@ export default class MainScene extends Phaser.Scene {
     constructor() {
         super({ key: 'main' });
     }
+    init() {
+        this.gameOver = false;
+        this.number = 0;
+    }
 
     preload() {
         const images = 'assets/images';
         const ships = 'ships/ship_';
         this.load.image('space', `${images}/space.jpeg`);
         this.load.atlas('airplane', `${images}/airplane.png`, `${images}/airplane.json`);
+        this.load.atlas('enemy-attack', `${images}/attack.png`, `${images}/attack.json`);
+        this.load.image('enemy-missile', `${images}/enemy_missile.png`);
+        this.load.image('spark-blue', `${images}/blue.png`);
+        this.load.image('spark-red', `${images}/red.png`);
+        
+
+        
+
         this.load.image('star', `./star.png`);
         this.load.image('bomb', './bomb.png');
         this.load.image('ship0', `${ships}0000.png`);
@@ -57,83 +69,92 @@ export default class MainScene extends Phaser.Scene {
         }
         this.score = this.add.text(16, 35, `Score: ${this.number}`, { fontSize: '16px', color: '#ffffff' }).setScrollFactor(0);
 
-        // ENEMY - RUSH TYPE
+        // PARTICLES
+        const particles1 = this.add.particles('spark-blue');
+        const particles2 = this.add.particles('spark-red');
+        const emitter1 = particles1.createEmitter({
+            x: 0,
+            y: -height / 2,
+            speed: { min: -800, max: 800 },
+            angle: { min: 0, max: 360 },
+            scale: { start: 0.5, end: 0 },
+            blendMode: 'SCREEN',
+            active: true,
+            lifespan: 600
+        });
+        const emitter2 = particles2.createEmitter({
+            x: 0,
+            y: -height / 2,
+            speed: { min: -800, max: 800 },
+            angle: { min: 0, max: 360 },
+            scale: { start: 0.5, end: 0 },
+            blendMode: 'SCREEN',
+            active: true,
+            lifespan: 600
+        });
+        emitter1.stop();
+        emitter2.stop();
+
+        /* ENEMY */
+        // RUSH TYPE
         this.Rush = new Rush({ scene: this });
-        // const timer = this.time.addEvent({
-        //     delay: 300,
-        //     callback: () => {
-        //         const { x, y } = this.Player.player;
-        //         this.Rush.create({ target: { x, y } });
-        //     },
-        //     loop: true
-        // });
+        this.createEnemy({ enemy: this.Rush, delay: 300 });
 
-        // ENERMY - ATTACK TYPE
+        // ATTACK TYPE
         this.Attack = new Attack({ scene: this });
+        this.createEnemy({ enemy: this.Attack, energy: 3, delay: 500 });
 
-        const timer = this.time.addEvent({
-            delay: 500,
-            callback: () => {
-                const { x, y } = this.Player.player;
-                // this.Rush.create({ target: { x, y } });
-                this.Attack.create({ target: { x, y } });
-            },
-            loop: true
-        });
-
-        // COLLIDER PLAYER - RUSH
-        this.physics.add.collider(this.Player.player, this.Rush.enemies, async (player, enemy) => {
-            this.cameras.main.flash(1000, undefined, undefined, undefined, true);
-            this.Player.life -= 1;
-            this.starcount.getChildren()[this.Player.life].destroy();
+        /* OVERLAP */
+        // PLAYER(BODY) - ENEMY(RUSH-BODY)
+        this.physics.add.overlap(this.Player.player, this.Rush.enemies, async (player, enemy) => {
+            this.damage();
             enemy.destroy();
             this.Rush.enemies.remove(enemy);
             if (this.Player.life === 0) {
-                this.physics.pause();
-                timer.destroy();
-                this.gameOver = true;
-                await new Promise((resolve) => setTimeout(resolve, 1500));
-                this.cameras.main.fade(2000);
-                this.scene.stop();
-                this.scene.start('end');
+                this.time.removeAllEvents();
+                this.end();
             }
         });
 
-        // COLLIDER PLAYER - ATTACK
-        // COLLIDER PLAYER - ENEMY
-        this.physics.add.collider(this.Player.player, this.Attack.enemies, async (player, enemy) => {
-            this.cameras.main.flash(1000, undefined, undefined, undefined, true);
-            this.Player.life -= 1;
-            this.starcount.getChildren()[this.Player.life].destroy();
+        // PLAYER(BODY) - ENEMY(ATTACK-BODY)
+        this.physics.add.overlap(this.Player.player, this.Attack.enemies, async (player, enemy) => {
+            this.damage();
             enemy.destroy();
             this.Attack.enemies.remove(enemy);
             if (this.Player.life === 0) {
-                this.physics.pause();
-                timer.destroy();
-                this.gameOver = true;
-                await new Promise((resolve) => setTimeout(resolve, 1500));
-                this.cameras.main.fade(2000);
-                this.scene.stop();
-                this.scene.start('end');
+                this.Player.projectileTimer.destroy();
+                this.time.removeAllEvents();
+                this.end();
             }
         });
 
-        // COLLIDER PLAYER(PROJECTILE) - RUSH
-        this.physics.add.collider(this.Player.Projectile.projectiles, this.Rush.enemies, (projectile, enemy) => {
+        // PLAYER(PROJECTILE) - ENEMY(RUSH)
+        this.physics.add.overlap(this.Player.Projectile.projectiles, this.Rush.enemies, (projectile, enemy) => {
+            emitter1.explode(Phaser.Math.Between(3, 8), enemy.body.x + enemy.body.width / 2, enemy.body.y + enemy.body.height / 2);
             enemy.destroy();
             this.Rush.enemies.remove(enemy);
             projectile.destroy();
             this.Player.Projectile.projectiles.remove(projectile);
-            this.number += 100;
+            this.addToScore(100);
         });
 
-        // COLLIDER PLAYER(PROJECTILE) - ATTACK
-        this.physics.add.collider(this.Player.Projectile.projectiles, this.Attack.enemies, (projectile, enemy) => {
-            enemy.destroy();
-            this.Attack.enemies.remove(enemy);
+        // PLAYER(PROJECTILE) - ENEMY(ATTACK)
+        this.physics.add.overlap(this.Player.Projectile.projectiles, this.Attack.enemies, (projectile, enemy) => {
+            if (enemy.data.values.type === 'projectile') return;
+
+            emitter2.explode(Phaser.Math.Between(3, 8), enemy.body.x + enemy.body.width / 2, enemy.body.y + enemy.body.height / 2);
+            enemy.data.values.energy -= 1;
+            // @ts-ignore
+            enemy.anims.play('energy' + ((enemy.data.values.energy % 3) + 1));
+            if (enemy.data.values.energy === 0) {
+                this.time.removeEvent(enemy.data.values.projectile);
+                enemy.destroy();
+                this.Attack.enemies.remove(enemy);
+            }
+
             projectile.destroy();
             this.Player.Projectile.projectiles.remove(projectile);
-            this.number += 100;
+            this.addToScore(100);
         });
 
         this.cursors = this.input.keyboard.createCursorKeys();
@@ -142,14 +163,13 @@ export default class MainScene extends Phaser.Scene {
     }
 
     update(time: number, delta: number): void {
-        if (Math.floor(this.number / 1000) >= this.Player.Projectile.level) this.Player.Projectile.upgrade();
+        if (Math.floor(this.number / 1000) >= this.Player.Projectile.level && this.Player.Projectile.level < 5) this.Player.Projectile.upgrade();
         if (this.gameOver) return;
         // BACKGROUND
         this.background.tilePositionY -= 3;
 
         // SCORE
-        this.number += 1;
-        this.score.setText(`Score: ${this.number}`);
+        this.addToScore(1);
 
         // PLAYER
         this.Player.update({ cursors: this.cursors });
@@ -159,5 +179,36 @@ export default class MainScene extends Phaser.Scene {
 
         // ENEMY - RUSH
         this.Rush.update();
+        this.Attack.update();
+    }
+    createEnemy({ enemy, energy = 1, delay }: { enemy: Rush | Attack; energy?: number; delay: number }) {
+        this.time.addEvent({
+            delay,
+            callback: () => {
+                const { x, y } = this.Player.player;
+                enemy.create({ target: { x, y }, energy: Phaser.Math.Between(1, 10) });
+            },
+            loop: true
+        });
+    }
+
+    addToScore(score: number) {
+        this.number += score;
+        this.score.setText(`Score: ${this.number}`);
+    }
+    damage() {
+        this.cameras.main.flash(1000, undefined, undefined, undefined, true);
+        this.Player.life -= 1;
+        this.Player.life > -1 && this.starcount.getChildren()[this.Player.life].destroy();
+    }
+    async end() {
+        this.physics.pause();
+        this.gameOver = true;
+        await new Promise((resolve) => setTimeout(resolve, 300));
+        this.cameras.main.fade(1500);
+        await new Promise((resolve) => setTimeout(resolve, 1800));
+
+        this.scene.stop();
+        this.scene.start('end');
     }
 }

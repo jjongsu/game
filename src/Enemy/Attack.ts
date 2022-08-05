@@ -13,12 +13,28 @@ export default class Attack {
         this.enemies = scene.physics.add.group();
     }
 
-    create({ target }: { target: { x: number; y: number } }) {
-        const enemy = this.scene.physics.add.image(target.x + Phaser.Math.Between(-100, 100), -this.height / 2, 'ship2').setScale(2);
-        this.enemies.add(enemy);
-        const speed = 300;
+    create({ target, energy }: { target: { x: number; y: number }; energy: number }) {
+        const [x, y] = [target.x + Phaser.Math.Between(-this.width / 2, this.width / 2), -this.height / 2];
+        // ENEMY
+        const enemy = this.scene.physics.add.sprite(x, y, 'enemy-attack').setScale(2);
 
-        enemy.body.velocity.y = speed;
+        // ENEMY SPRITE
+        this.scene.anims.create({ key: 'energy1', frames: [{ key: 'enemy-attack', frame: 'ship_0001' }], frameRate: 30, repeat: 0 });
+        this.scene.anims.create({ key: 'energy2', frames: [{ key: 'enemy-attack', frame: 'ship_0002' }], frameRate: 30, repeat: 0 });
+        this.scene.anims.create({ key: 'energy3', frames: [{ key: 'enemy-attack', frame: 'ship_0003' }], frameRate: 30, repeat: 0 });
+
+        enemy.anims.play('energy3');
+
+        this.enemies.add(enemy);
+        enemy.body.velocity.y = 300;
+
+        const projectile = this.scene.time.addEvent({
+            delay: 1500,
+            callback: () => this.createProjectile(enemy.x, enemy.y),
+            loop: false
+        });
+
+        enemy.setData({ energy, projectile });
     }
     update() {
         this.enemies.children.iterate((child) => {
@@ -29,5 +45,12 @@ export default class Attack {
                 });
             }
         });
+    }
+    createProjectile(x: number, y: number) {
+        const projectile = this.scene.physics.add.image(x, y, 'enemy-missile');
+        projectile.setData({ type: 'projectile' });
+        projectile.setRotation(Math.PI);
+        this.enemies.add(projectile);
+        projectile.body.velocity.y = 400;
     }
 }

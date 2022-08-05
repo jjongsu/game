@@ -5,6 +5,8 @@ export default class Player {
     scene!: Phaser.Scene;
     Projectile!: Projectile;
     life: number = 3;
+    projectileTimer!: Phaser.Time.TimerEvent;
+    speed = 700;
     constructor({ scene }: { scene: Phaser.Scene }) {
         this.scene = scene;
     }
@@ -18,18 +20,18 @@ export default class Player {
         // PLAYER SPRITE
         this.scene.anims.create({ key: 'left', frames: [{ key: 'airplane', frame: '05' }], frameRate: 30, repeat: 0 });
         this.scene.anims.create({ key: 'right', frames: [{ key: 'airplane', frame: '09' }], frameRate: 30, repeat: 0 });
-        this.scene.anims.create({ key: 'hold', frames: [{ key: 'airplane', frame: '07' }], frameRate: 30, repeat: 0 });
+        this.scene.anims.create({
+            key: 'hold',
+            frames: [{ key: 'airplane', frame: '07' }],
+            frameRate: 30,
+            repeat: 0
+        });
 
         // PROJECTILE
         this.Projectile = new Projectile({ scene: this.scene });
-        this.Projectile.create({ player: this });
-
-        const timer = this.scene.time.addEvent({
+        this.projectileTimer = this.scene.time.addEvent({
             delay: 1000,
-            callback: () => {
-                this.Projectile.create({ player: this });
-                this.life === 0 && timer.destroy();
-            },
+            callback: () => this.Projectile.create({ player: this }),
             loop: true
         });
     }
@@ -37,17 +39,17 @@ export default class Player {
     update({ cursors }: { cursors: Phaser.Types.Input.Keyboard.CursorKeys }) {
         // MOVE
         if (cursors.left.isDown) {
-            this.player.body.velocity.x = -500;
+            this.player.body.velocity.x = -this.speed;
         } else if (cursors.right.isDown) {
-            this.player.body.velocity.x = 500;
+            this.player.body.velocity.x = this.speed;
         } else {
             this.player.body.velocity.x = 0;
         }
 
         if (cursors.up.isDown) {
-            this.player.body.velocity.y = -500;
+            this.player.body.velocity.y = -this.speed;
         } else if (cursors.down.isDown) {
-            this.player.body.velocity.y = 500;
+            this.player.body.velocity.y = this.speed;
         } else {
             this.player.body.velocity.y = 0;
         }
