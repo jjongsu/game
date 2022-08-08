@@ -32,9 +32,6 @@ export default class MainScene extends Phaser.Scene {
         this.load.image('spark-blue', `${images}/blue.png`);
         this.load.image('spark-red', `${images}/red.png`);
         
-
-        
-
         this.load.image('star', `./star.png`);
         this.load.image('bomb', './bomb.png');
         this.load.image('ship0', `${ships}0000.png`);
