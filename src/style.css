@@ -11,6 +11,11 @@ body {
 }
 
 canvas {
-    margin: 0 auto;    
+    margin: 0 auto;
     /* margin-left: 25%; */
 }
+
+/* @font-face {
+    font-family: 'questionFont';
+    src: url('assets/questionFont.ttf') format('truetype');
+} */

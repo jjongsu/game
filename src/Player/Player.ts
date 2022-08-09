@@ -4,14 +4,14 @@ export default class Player {
     player!: Phaser.Types.Physics.Arcade.SpriteWithDynamicBody;
     scene!: Phaser.Scene;
     Projectile!: Projectile;
-    life: number = 3;
+    life: number = 10;
     projectileTimer!: Phaser.Time.TimerEvent;
     speed = 700;
     constructor({ scene }: { scene: Phaser.Scene }) {
         this.scene = scene;
     }
 
-    create() {
+    create({ projectile }: { projectile: boolean }) {
         const { width, height } = this.scene.game.canvas;
         // PLAYER
         this.player = this.scene.physics.add.sprite(width / 2, height * 1.4, 'airplane').setScale(0.5);
@@ -28,12 +28,14 @@ export default class Player {
         });
 
         // PROJECTILE
-        this.Projectile = new Projectile({ scene: this.scene });
-        this.projectileTimer = this.scene.time.addEvent({
-            delay: 1000,
-            callback: () => this.Projectile.create({ player: this }),
-            loop: true
-        });
+        if (projectile) {
+            this.Projectile = new Projectile({ scene: this.scene });
+            this.projectileTimer = this.scene.time.addEvent({
+                delay: 1000,
+                callback: () => this.Projectile.create({ player: this }),
+                loop: true
+            });
+        }
     }
 
     update({ cursors }: { cursors: Phaser.Types.Input.Keyboard.CursorKeys }) {
