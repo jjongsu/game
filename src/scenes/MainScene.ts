@@ -3,6 +3,9 @@ import Rush from '../Enemy/Rush';
 import Attack from '../Enemy/Attack';
 
 export default class MainScene extends Phaser.Scene {
+    static damage() {
+        throw new Error('Method not implemented.');
+    }
     cursors!: Phaser.Types.Input.Keyboard.CursorKeys;
     background!: Phaser.GameObjects.TileSprite;
     Player!: Player;
@@ -31,9 +34,6 @@ export default class MainScene extends Phaser.Scene {
         this.load.image('enemy-missile', `${images}/enemy_missile.png`);
         this.load.image('spark-blue', `${images}/blue.png`);
         this.load.image('spark-red', `${images}/red.png`);
-        
-
-        
 
         this.load.image('star', `./star.png`);
         this.load.image('bomb', './bomb.png');
@@ -53,7 +53,7 @@ export default class MainScene extends Phaser.Scene {
 
         // PLAYER
         this.Player = new Player({ scene: this });
-        this.Player.create();
+        this.Player.create({ projectile: true });
 
         // GAME INFO
         this.add.text(16, 16, `Life:`, { fontSize: '16px', color: '#ffffff' }).setScrollFactor(0);
@@ -162,8 +162,13 @@ export default class MainScene extends Phaser.Scene {
         this.cameras.main.setBounds(-width / 2, -height / 2, width * 2, height * 2);
     }
 
-    update(time: number, delta: number): void {
+    async update(time: number, delta: number): Promise<void> {
         if (Math.floor(this.number / 1000) >= this.Player.Projectile.level && this.Player.Projectile.level < 5) this.Player.Projectile.upgrade();
+        if (this.Player.Projectile.level > 1 && this.number % 10000 < 100) {
+            await new Promise((resolve) => setTimeout(resolve, 300));
+            this.scene.pause();
+            this.scene.launch('bonus');
+        }
         if (this.gameOver) return;
         // BACKGROUND
         this.background.tilePositionY -= 3;
