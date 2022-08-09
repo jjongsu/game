@@ -35,8 +35,10 @@ export default class Projectile {
     }
 
     upgrade() {
-        this.level++;
-        if (this.Player) this.Player.projectileTimer.timeScale = Math.max(1, this.level * 0.8);
+        if (this.Player) {
+            this.level++;
+            this.Player.projectileTimer.timeScale = Math.max(1, this.level * 0.8);
+        }
     }
     update() {
         this.projectiles.children.iterate((child) => {

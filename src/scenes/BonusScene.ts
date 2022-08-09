@@ -13,7 +13,7 @@ export default class BonusScene extends Phaser.Scene {
 
     preload() {
         // background
-        this.load.image('background2', `./sky.png`);
+        this.load.image('background2', `sky.png`);
 
         // airplane
         const images = 'assets/images';
@@ -61,7 +61,7 @@ export default class BonusScene extends Phaser.Scene {
         const choiceG = this.physics.add.group();
         choice.map((el, i: number) => {
             const bombImg = this.add.image((width * (i + 1)) / 4, 200, 'bomb').setScale(3);
-            const bombText = this.add.text((width * (i + 1)) / 4, 200, el.text, { fontFamily: 'questionFont', fontSize: '25px', color: 'blue' }).setOrigin(0.5);
+            const bombText = this.add.text((width * (i + 1)) / 4, 200, el.text, { fontFamily: 'questionFont', fontSize: '25px', color: '#ffffff' }).setOrigin(0.5);
             bombImg.setData({ text: bombText, answer: el.answer });
             choiceG.add(bombImg);
         });
@@ -76,7 +76,9 @@ export default class BonusScene extends Phaser.Scene {
 
         // crash bomb - missile
         this.physics.add.overlap(this.Projectile.projectiles, choiceG, async (projectile, choice) => {
-            if (choice.getData('answer')) {
+            const answer = choice.getData('answer');
+
+            if (answer) {
                 // 정답
                 const result = this.sound.add('success');
                 result.play();
@@ -92,12 +94,12 @@ export default class BonusScene extends Phaser.Scene {
 
             await new Promise((resolve) => setTimeout(resolve, 1000));
             this.scene.stop();
-            this.scene.resume('main');
+            this.scene.resume('main', { answer });
         });
     }
 
     update() {
-        // // PLAYER
+        // PLAYER
         if (this.cursors.left.isDown) {
             this.Player.player.body.velocity.x = -700;
         } else if (this.cursors.right.isDown) {

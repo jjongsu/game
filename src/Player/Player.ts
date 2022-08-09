@@ -4,7 +4,7 @@ export default class Player {
     player!: Phaser.Types.Physics.Arcade.SpriteWithDynamicBody;
     scene!: Phaser.Scene;
     Projectile!: Projectile;
-    life: number = 10;
+    life: number = 30;
     projectileTimer!: Phaser.Time.TimerEvent;
     speed = 700;
     constructor({ scene }: { scene: Phaser.Scene }) {

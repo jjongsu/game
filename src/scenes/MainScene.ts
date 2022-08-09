@@ -16,6 +16,7 @@ export default class MainScene extends Phaser.Scene {
     score!: Phaser.GameObjects.Text;
     starcount!: Phaser.GameObjects.Group;
     Attack!: Attack;
+    bonusScene = false;
 
     constructor() {
         super({ key: 'main' });
@@ -23,6 +24,7 @@ export default class MainScene extends Phaser.Scene {
     init() {
         this.gameOver = false;
         this.number = 0;
+        this.bonusScene = false;
     }
 
     preload() {
@@ -69,9 +71,7 @@ export default class MainScene extends Phaser.Scene {
         this.score = this.add.text(16, 35, `Score: ${this.number}`, { fontSize: '16px', color: '#ffffff' }).setScrollFactor(0);
 
         // PARTICLES
-        const particles1 = this.add.particles('spark-blue');
-        const particles2 = this.add.particles('spark-red');
-        const emitter1 = particles1.createEmitter({
+        const emitter1 = this.add.particles('spark-blue').createEmitter({
             x: 0,
             y: -height / 2,
             speed: { min: -800, max: 800 },
@@ -81,7 +81,7 @@ export default class MainScene extends Phaser.Scene {
             active: true,
             lifespan: 600
         });
-        const emitter2 = particles2.createEmitter({
+        const emitter2 = this.add.particles('spark-red').createEmitter({
             x: 0,
             y: -height / 2,
             speed: { min: -800, max: 800 },
@@ -101,7 +101,7 @@ export default class MainScene extends Phaser.Scene {
 
         // ATTACK TYPE
         this.Attack = new Attack({ scene: this });
-        this.createEnemy({ enemy: this.Attack, energy: 3, delay: 500 });
+        this.createEnemy({ enemy: this.Attack, delay: 500 });
 
         /* OVERLAP */
         // PLAYER(BODY) - ENEMY(RUSH-BODY)
@@ -159,13 +159,33 @@ export default class MainScene extends Phaser.Scene {
         this.cursors = this.input.keyboard.createCursorKeys();
         this.cameras.main.startFollow(this.Player.player);
         this.cameras.main.setBounds(-width / 2, -height / 2, width * 2, height * 2);
+
+        this.events.on('resume', (system: any, data: any) => {
+            if (data.answer) {
+                const addLife = 5;
+                this.Player.life += addLife;
+                for (let index = this.Player.life; index < this.Player.life + addLife; index++) {
+                    this.starcount.add(
+                        this.add
+                            .image(16 * index, 23, 'star')
+                            .setScale(0.7)
+                            .setScrollFactor(0),
+                        true
+                    );
+                }
+            }
+            this.bonusScene = false;
+        });
     }
 
     async update(time: number, delta: number): Promise<void> {
-        if (Math.floor(this.number / 1000) >= this.Player.Projectile.level && this.Player.Projectile.level < 5) this.Player.Projectile.upgrade();
+        if (this.bonusScene) return;
+        if (Math.floor(this.number / 1000) >= this.Player.Projectile.level && this.Player.Projectile.level < 10) this.Player.Projectile.upgrade();
+
         if (this.Player.Projectile.level > 1 && this.number % 10000 < 100) {
+            this.bonusScene = true;
             await new Promise((resolve) => setTimeout(resolve, 300));
-            this.scene.pause();
+            this.scene.pause('main');
             this.scene.launch('bonus');
         }
         if (this.gameOver) return;
@@ -173,7 +193,7 @@ export default class MainScene extends Phaser.Scene {
         this.background.tilePositionY -= 3;
 
         // SCORE
-        this.addToScore(1);
+        // this.addToScore(1);
 
         // PLAYER
         this.Player.update({ cursors: this.cursors });
@@ -185,12 +205,12 @@ export default class MainScene extends Phaser.Scene {
         this.Rush.update();
         this.Attack.update();
     }
-    createEnemy({ enemy, energy = 1, delay }: { enemy: Rush | Attack; energy?: number; delay: number }) {
+    createEnemy({ enemy, delay }: { enemy: Rush | Attack; delay: number }) {
         this.time.addEvent({
             delay,
             callback: () => {
                 const { x, y } = this.Player.player;
-                enemy.create({ target: { x, y }, energy: Phaser.Math.Between(1, 10) });
+                enemy.create({ target: { x, y }, energy: Phaser.Math.Between(3, 100) });
             },
             loop: true
         });
