@@ -185,6 +185,9 @@ export default class MainScene extends Phaser.Scene {
                         true
                     );
                 }
+            } else {
+                this.damage();
+                if (this.Player.life === 0) this.end();
             }
             this.bonusScene = false;
             this.mainSceneMusic.resume();
