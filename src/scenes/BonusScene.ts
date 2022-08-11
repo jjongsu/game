@@ -6,17 +6,22 @@ export default class BonusScene extends Phaser.Scene {
     cursors!: Phaser.Types.Input.Keyboard.CursorKeys;
     question!: Phaser.GameObjects.Text;
     Projectile!: Projectile;
+    bonusSceneMusic!: Phaser.Sound.BaseSound;
 
     constructor() {
         super({ key: 'bonus' });
     }
 
     preload() {
+        const images = 'assets/images';
+
         // background
-        this.load.image('background2', `sky.png`);
+        this.load.image('background2', `${images}/bonusBackgroundImg.jpg`);
+
+        // question background
+        this.load.image('questionBackground', `${images}/questionBackground.png`);
 
         // airplane
-        const images = 'assets/images';
         this.load.atlas('airplane', `${images}/airplane.png`, `${images}/airplane.json`);
 
         // font
@@ -24,6 +29,7 @@ export default class BonusScene extends Phaser.Scene {
 
         // bomb
         this.load.image('bomb', `./bomb.png`);
+        this.load.image('choiceBackground', `${images}/choiceBackground.png`);
 
         // missile
         this.load.audio('missile', 'assets/sounds/attackSound.mp3');
@@ -31,13 +37,24 @@ export default class BonusScene extends Phaser.Scene {
         // result sound
         this.load.audio('failure', 'assets/sounds/fail.mp3');
         this.load.audio('success', 'assets/sounds/success.mp3');
+
+        // background music
+        this.load.audio('bonusSceneMusic', 'assets/sounds/bonusSceneMusic.mp3');
     }
 
     create() {
         const { width } = this.game.canvas;
 
+        // BACKGROUND MUSIC
+        this.bonusSceneMusic = this.sound.add('bonusSceneMusic', { loop: true });
+        this.bonusSceneMusic.play();
+
         // background
-        this.add.image(0, 0, 'background2').setScale(2, 2).setOrigin(0, 0);
+        this.add.image(0, 0, 'background2').setScale(0.6, 0.6).setOrigin(0, 0);
+        this.add
+            .image(width / 2, 22, 'questionBackground')
+            .setScale(0.3, 0.3)
+            .setOrigin(0.5, 0);
 
         // PLAYER
         this.Player = new Player({ scene: this });
@@ -60,8 +77,10 @@ export default class BonusScene extends Phaser.Scene {
         ].sort(() => Math.random() - 0.5);
         const choiceG = this.physics.add.group();
         choice.map((el, i: number) => {
-            const bombImg = this.add.image((width * (i + 1)) / 4, 200, 'bomb').setScale(3);
-            const bombText = this.add.text((width * (i + 1)) / 4, 200, el.text, { fontFamily: 'questionFont', fontSize: '25px', color: '#ffffff' }).setOrigin(0.5);
+            const bombImg = this.add.image((width * (i + 1)) / 4, 196, 'choiceBackground').setScale(0.15);
+            const bombText = this.add
+                .text((width * (i + 1)) / 4, 200, el.text, { fontFamily: 'questionFont', fontSize: '25px', color: '#ffffff' })
+                .setOrigin(0.5);
             bombImg.setData({ text: bombText, answer: el.answer });
             choiceG.add(bombImg);
         });
@@ -95,31 +114,12 @@ export default class BonusScene extends Phaser.Scene {
             await new Promise((resolve) => setTimeout(resolve, 1000));
             this.scene.stop();
             this.scene.resume('main', { answer });
+            this.bonusSceneMusic.stop();
         });
     }
 
     update() {
-        // PLAYER
-        if (this.cursors.left.isDown) {
-            this.Player.player.body.velocity.x = -700;
-        } else if (this.cursors.right.isDown) {
-            this.Player.player.body.velocity.x = 700;
-        } else {
-            this.Player.player.body.velocity.x = 0;
-        }
-
-        if (this.cursors.up.isDown) {
-            this.Player.player.body.velocity.y = -700;
-        } else if (this.cursors.down.isDown) {
-            this.Player.player.body.velocity.y = 700;
-        } else {
-            this.Player.player.body.velocity.y = 0;
-        }
-
-        // IMAGE
-        this.Player.player.anims.play('hold', true);
-        this.cursors.left.isDown && this.Player.player.anims.play('left', true);
-        this.cursors.right.isDown && this.Player.player.anims.play('right', true);
+        this.Player.update({ cursors: this.cursors });
     }
 
     // font

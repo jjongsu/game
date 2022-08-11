@@ -17,6 +17,8 @@ export default class MainScene extends Phaser.Scene {
     starcount!: Phaser.GameObjects.Group;
     Attack!: Attack;
     bonusScene = false;
+    mainSceneMusic!: Phaser.Sound.BaseSound;
+    collisionSound!: Phaser.Sound.BaseSound;
 
     constructor() {
         super({ key: 'main' });
@@ -43,10 +45,16 @@ export default class MainScene extends Phaser.Scene {
         this.load.image('ship2', `${ships}0002.png`);
         this.load.image('ship3', `${ships}0003.png`);
         this.load.image('missile', './ships/spaceMissiles_024.png');
+        this.load.audio('mainSceneMusic', 'assets/sounds/mainSceneMusic.mp3');
+        this.load.audio('collisionSound', 'assets/sounds/collisionSound.mp3');
     }
 
     create() {
         const { width, height } = this.game.canvas;
+
+        // BACKGROUND MUSIC
+        this.mainSceneMusic = this.sound.add('mainSceneMusic', { loop: true });
+        this.mainSceneMusic.play();
 
         // BACKGROUND
         this.background = this.add.tileSprite(-width / 2, -height / 2, width * 2, height * 2, 'space').setOrigin(0, 0);
@@ -69,6 +77,9 @@ export default class MainScene extends Phaser.Scene {
             );
         }
         this.score = this.add.text(16, 35, `Score: ${this.number}`, { fontSize: '16px', color: '#ffffff' }).setScrollFactor(0);
+
+        // COLLISION SOUND
+        this.collisionSound = this.sound.add('collisionSound');
 
         // PARTICLES
         const emitter1 = this.add.particles('spark-blue').createEmitter({
@@ -108,6 +119,7 @@ export default class MainScene extends Phaser.Scene {
         this.physics.add.overlap(this.Player.player, this.Rush.enemies, async (player, enemy) => {
             this.damage();
             enemy.destroy();
+            this.collisionSound.play();
             this.Rush.enemies.remove(enemy);
             if (this.Player.life === 0) {
                 this.time.removeAllEvents();
@@ -119,6 +131,7 @@ export default class MainScene extends Phaser.Scene {
         this.physics.add.overlap(this.Player.player, this.Attack.enemies, async (player, enemy) => {
             this.damage();
             enemy.destroy();
+            this.collisionSound.play();
             this.Attack.enemies.remove(enemy);
             if (this.Player.life === 0) {
                 this.Player.projectileTimer.destroy();
@@ -150,7 +163,6 @@ export default class MainScene extends Phaser.Scene {
                 enemy.destroy();
                 this.Attack.enemies.remove(enemy);
             }
-
             projectile.destroy();
             this.Player.Projectile.projectiles.remove(projectile);
             this.addToScore(100);
@@ -175,6 +187,7 @@ export default class MainScene extends Phaser.Scene {
                 }
             }
             this.bonusScene = false;
+            this.mainSceneMusic.resume();
         });
     }
 
@@ -185,6 +198,7 @@ export default class MainScene extends Phaser.Scene {
         if (this.Player.Projectile.level > 1 && this.number % 10000 < 100) {
             this.bonusScene = true;
             await new Promise((resolve) => setTimeout(resolve, 300));
+            this.mainSceneMusic.pause();
             this.scene.pause('main');
             this.scene.launch('bonus');
         }
@@ -231,7 +245,7 @@ export default class MainScene extends Phaser.Scene {
         await new Promise((resolve) => setTimeout(resolve, 300));
         this.cameras.main.fade(1500);
         await new Promise((resolve) => setTimeout(resolve, 1800));
-
+        this.mainSceneMusic.stop();
         this.scene.stop();
         this.scene.start('end');
     }
