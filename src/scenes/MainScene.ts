@@ -116,7 +116,7 @@ export default class MainScene extends Phaser.Scene {
 
         /* OVERLAP */
         // PLAYER(BODY) - ENEMY(RUSH-BODY)
-        this.physics.add.overlap(this.Player.player, this.Rush.enemies, async (player, enemy) => {
+        this.physics.add.overlap(this.Player.player, this.Rush.enemies, async (_player, enemy) => {
             this.damage();
             enemy.destroy();
             this.collisionSound.play();
@@ -128,7 +128,7 @@ export default class MainScene extends Phaser.Scene {
         });
 
         // PLAYER(BODY) - ENEMY(ATTACK-BODY)
-        this.physics.add.overlap(this.Player.player, this.Attack.enemies, async (player, enemy) => {
+        this.physics.add.overlap(this.Player.player, this.Attack.enemies, async (_player, enemy) => {
             this.damage();
             enemy.destroy();
             this.collisionSound.play();
@@ -172,7 +172,7 @@ export default class MainScene extends Phaser.Scene {
         this.cameras.main.startFollow(this.Player.player);
         this.cameras.main.setBounds(-width / 2, -height / 2, width * 2, height * 2);
 
-        this.events.on('resume', (system: any, data: any) => {
+        this.events.on('resume', (_system: any, data: any) => {
             if (data.answer) {
                 const addLife = 5;
                 this.Player.life += addLife;
@@ -191,7 +191,7 @@ export default class MainScene extends Phaser.Scene {
         });
     }
 
-    async update(time: number, delta: number): Promise<void> {
+    async update(_time: number, _delta: number): Promise<void> {
         if (this.bonusScene) return;
         if (Math.floor(this.number / 1000) >= this.Player.Projectile.level && this.Player.Projectile.level < 10) this.Player.Projectile.upgrade();
 
