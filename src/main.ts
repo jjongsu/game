@@ -6,7 +6,7 @@ import BonusScene from './scenes/BonusScene';
 
 new Phaser.Game({
     type: Phaser.AUTO,
-    width: '50%',
+    width: '100%',
     height: '100%',
 
     physics: {

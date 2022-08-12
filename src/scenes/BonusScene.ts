@@ -1,13 +1,18 @@
 import Player from '../Player';
 import Projectile from '../Player/Projectile';
+import VirtualJoystick from 'phaser3-rex-plugins/plugins/virtualjoystick.js';
 
 export default class BonusScene extends Phaser.Scene {
     Player!: Player;
-    cursors!: Phaser.Types.Input.Keyboard.CursorKeys;
+    cursors!:
+        | Phaser.Types.Input.Keyboard.CursorKeys
+        | { up: Phaser.Input.Keyboard.Key; down: Phaser.Input.Keyboard.Key; left: Phaser.Input.Keyboard.Key; right: Phaser.Input.Keyboard.Key };
     question!: Phaser.GameObjects.Text;
     Projectile!: Projectile;
     bonusSceneMusic!: Phaser.Sound.BaseSound;
-
+    joyStick!: VirtualJoystick;
+    detect!: 'desktop' | 'mobile';
+    attackButton!: Phaser.GameObjects.Image;
     constructor() {
         super({ key: 'bonus' });
     }
@@ -20,6 +25,9 @@ export default class BonusScene extends Phaser.Scene {
 
         // question background
         this.load.image('questionBackground', `${images}/questionBackground.png`);
+
+        // mobile attack button
+        this.load.image('button', `${images}/button.png`);
 
         // airplane
         this.load.atlas('airplane', `${images}/airplane.png`, `${images}/airplane.json`);
@@ -43,7 +51,7 @@ export default class BonusScene extends Phaser.Scene {
     }
 
     create() {
-        const { width } = this.game.canvas;
+        const { width, height } = this.game.canvas;
 
         // BACKGROUND MUSIC
         this.bonusSceneMusic = this.sound.add('bonusSceneMusic', { loop: true });
@@ -60,7 +68,31 @@ export default class BonusScene extends Phaser.Scene {
         this.Player = new Player({ scene: this });
         this.Player.create({ projectile: false });
 
-        this.cursors = this.input.keyboard.createCursorKeys();
+        // detect mobile or desktop
+        if (this.sys.game.device.os.desktop) {
+            this.cursors = this.input.keyboard.createCursorKeys();
+            this.detect = 'desktop';
+        } else {
+            // joystick
+            this.joyStick = new VirtualJoystick(this, {
+                x: width - 100,
+                y: height - 100,
+                radius: 100,
+                base: this.add.circle(0, 0, 100, 0x888888),
+                thumb: this.add.circle(0, 0, 50, 0xcccccc)
+            });
+            this.cursors = this.joyStick.createCursorKeys();
+            this.detect = 'mobile';
+            this.attackButton = this.add
+                .image(70, height - 70, 'button')
+                .setScale(0.2, 0.2)
+                .setOrigin(0.5, 0.5)
+                .setInteractive()
+                .on('pointerdown', () => {
+                    missile.play();
+                    this.Projectile.create({ player: this.Player });
+                });
+        }
 
         // question
         const a = Phaser.Math.Between(1, 9);
@@ -119,6 +151,7 @@ export default class BonusScene extends Phaser.Scene {
     }
 
     update() {
+        // this.Player.update({ cursors: this.cursors, os: this.detect });
         this.Player.update({ cursors: this.cursors });
     }
 

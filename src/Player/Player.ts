@@ -38,7 +38,15 @@ export default class Player {
         }
     }
 
-    update({ cursors }: { cursors: Phaser.Types.Input.Keyboard.CursorKeys }) {
+    update({
+        cursors
+    }: // os
+    {
+        cursors:
+            | Phaser.Types.Input.Keyboard.CursorKeys
+            | { up: Phaser.Input.Keyboard.Key; down: Phaser.Input.Keyboard.Key; left: Phaser.Input.Keyboard.Key; right: Phaser.Input.Keyboard.Key };
+        // os: 'desktop' | 'mobile';
+    }) {
         // MOVE
         if (cursors.left.isDown) {
             this.player.body.velocity.x = -this.speed;

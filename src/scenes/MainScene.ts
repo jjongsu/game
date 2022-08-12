@@ -1,12 +1,15 @@
 import Player from '../Player';
 import Rush from '../Enemy/Rush';
 import Attack from '../Enemy/Attack';
+import VirtualJoystick from 'phaser3-rex-plugins/plugins/virtualjoystick.js';
 
 export default class MainScene extends Phaser.Scene {
     static damage() {
         throw new Error('Method not implemented.');
     }
-    cursors!: Phaser.Types.Input.Keyboard.CursorKeys;
+    cursors!:
+        | Phaser.Types.Input.Keyboard.CursorKeys
+        | { up: Phaser.Input.Keyboard.Key; down: Phaser.Input.Keyboard.Key; left: Phaser.Input.Keyboard.Key; right: Phaser.Input.Keyboard.Key };
     background!: Phaser.GameObjects.TileSprite;
     Player!: Player;
     Rush!: Rush;
@@ -19,7 +22,8 @@ export default class MainScene extends Phaser.Scene {
     bonusScene = false;
     mainSceneMusic!: Phaser.Sound.BaseSound;
     collisionSound!: Phaser.Sound.BaseSound;
-
+    joyStick!: VirtualJoystick;
+    detect!: 'desktop' | 'mobile';
     constructor() {
         super({ key: 'main' });
     }
@@ -168,7 +172,23 @@ export default class MainScene extends Phaser.Scene {
             this.addToScore(100);
         });
 
-        this.cursors = this.input.keyboard.createCursorKeys();
+        // detect mobile or desktop
+        if (this.sys.game.device.os.desktop) {
+            this.cursors = this.input.keyboard.createCursorKeys();
+            this.detect = 'desktop';
+        } else {
+            // joystick
+            this.joyStick = new VirtualJoystick(this, {
+                x: width - 100,
+                y: height - 100,
+                radius: 100,
+                base: this.add.circle(0, 0, 100, 0x888888),
+                thumb: this.add.circle(0, 0, 50, 0xcccccc)
+            });
+            this.cursors = this.joyStick.createCursorKeys();
+            this.detect = 'mobile';
+        }
+
         this.cameras.main.startFollow(this.Player.player);
         this.cameras.main.setBounds(-width / 2, -height / 2, width * 2, height * 2);
 
@@ -213,6 +233,7 @@ export default class MainScene extends Phaser.Scene {
         // this.addToScore(1);
 
         // PLAYER
+        // this.Player.update({ cursors: this.cursors, os: this.detect });
         this.Player.update({ cursors: this.cursors });
 
         // PLAYER(PROJECTILE)
